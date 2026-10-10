@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marvel vs Xenomorphs Game</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --card: #1f2937;
+      --accent: #ef4444;
+      --gold: #fbbf24;
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --hero: #60a5fa;
+      --enemy: #22c55e;
+      --danger: #f87171;
+      --shadow: rgba(0,0,0,0.4);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #1e293b, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .game-container {
+      width: min(1000px, 96vw);
+    }
+
+    .menu {
+      background: rgba(17, 24, 39, 0.95);
+      border: 2px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      box-shadow: 0 24px 60px var(--shadow);
+      padding: 40px 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .menu.hidden {
+      display: none;
+    }
+
+    .menu h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      color: var(--gold);
+      letter-spacing: 2px;
+      text-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+    }
+
+    .menu p {
+      font-size: 1.1rem;
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 500px;
+    }
+
+    .menu-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .play-btn {
+      padding: 16px 48px;
+      font-size: 1.3rem;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      color: #111827;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 12px 30px rgba(249, 115, 22, 0.35);
+    }
+
+    .play-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 40px rgba(249, 115, 22, 0.45);
+    }
+
+    .play-btn:active {
+      transform: translateY(0);
+    }
+
+    .game {
+      width: 100%;
+      background: rgba(17, 24, 39, 0.95);
+      border: 2px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      box-shadow: 0 24px 60px var(--shadow);
+      padding: 20px;
+      display: none;
+    }
+
+    .game.active {
+      display: block;
+    }
+
+    h1 {
+      margin: 0 0 16px;
+      text-align: center;
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      color: var(--gold);
+      letter-spacing: 1px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+      align-items: center;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button {
+      border: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      color: #111827;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 8px 18px rgba(249, 115, 22, 0.25);
+      font-size: 0.95rem;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
+    }
+
+    button.danger {
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      color: white;
+      box-shadow: 0 8px 18px rgba(239, 68, 68, 0.25);
+    }
+
+    button.quit {
+      background: linear-gradient(135deg, #6b7280, #4b5563);
+      color: white;
+      box-shadow: 0 8px 18px rgba(107, 114, 128, 0.25);
+      padding: 8px 12px;
+      font-size: 0.9rem;
+    }
+
+    .status {
+      display: grid;
+      grid-template-columns: 1.3fr 0.9fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .panel {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .hero-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .hero-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 10px;
+      min-height: 120px;
+      position: relative;
+    }
+
+    .hero-card.active {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.5);
+    }
+
+    .hero-card.dead {
+      opacity: 0.45;
+      filter: grayscale(1);
+    }
+
+    .hero-name {
+      font-weight: bold;
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .hero-stats {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .board-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(7, 60px);
+      grid-template-rows: repeat(7, 60px);
+      gap: 6px;
+      background: rgba(255,255,255,0.02);
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      user-select: none;
+    }
+
+    .tile {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.9));
+      border: 1px solid rgba(255,255,255,0.06);
+      position: relative;
+      font-size: 20px;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .tile:hover {
+      transform: scale(1.03);
+    }
+
+    .tile.selected {
+      outline: 2px solid var(--gold);
+      box-shadow: 0 0 0 2px rgba(251,191,36,0.35);
+    }
+
+    .token {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: bold;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+      border: 2px solid rgba(255,255,255,0.7);
+    }
+
+    .hero-token {
+      background: linear-gradient(135deg, #60a5fa, #2563eb);
+    }
+
+    .xeno-token {
+      background: linear-gradient(135deg, #22c55e, #15803d);
+    }
+
+    .log {
+      margin-top: 16px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-height: 120px;
+      max-height: 180px;
+      overflow-y: auto;
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.6;
+    }
+
+    .log-entry {
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+
+    .legend {
+      display: flex;
+      gap: 18px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    #turnLabel {
+      font-weight: bold;
+      color: #fbbf24;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 740px) {
+      .status {
+        grid-template-columns: 1fr;
+      }
+      .hero-list {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+      }
+      .board {
+        grid-template-columns: repeat(7, 42px);
+        grid-template-rows: repeat(7, 42px);
+      }
+      .tile {
+        width: 42px;
+        height: 42px;
+      }
+      .controls {
+        gap: 6px;
+      }
+      button {
+        padding: 8px 10px;
+        font-size: 0.85rem;
+      }
+      .play-btn {
+        padding: 14px 40px;
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <!-- MENU SCREEN -->
+    <div class="menu" id="menuScreen">
+      <h1>🔴 MARVEL VS XENOMORPHS 🔴</h1>
+      <p>
+        Lead six mighty Marvel heroes into battle against waves of deadly Xenomorphs!
+        Move, attack, and use special powers to survive. When one hero falls, switch to the next one.
+        If all heroes are defeated, you lose!
+      </p>
+      <p style="color: var(--gold); font-weight: bold;">
+        6 Heroes • 7x7 Battle Arena • Strategic Combat
+      </p>
+      <div class="menu-buttons">
+        <button class="play-btn" id="playBtn">▶ PLAY GAME</button>
+      </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div class="game" id="gameScreen">
+      <h1>Marvel vs. Xenomorphs</h1>
+
+      <div class="topbar">
+        <div class="controls">
+          <button id="moveBtn" class="secondary">🚶 Move</button>
+          <button id="attackBtn">⚔️ Attack</button>
+          <button id="specialBtn" class="secondary">✨ Hero Power</button>
+          <button id="nextRoundBtn" class="danger">➡️ Next Round</button>
+        </div>
+        <div id="turnLabel"></div>
+        <button id="quitBtn" class="quit">Quit</button>
+      </div>
+
+      <div class="status">
+        <div class="panel">
+          <div class="hero-list" id="heroList"></div>
+        </div>
+
+        <div class="panel board-wrap">
+          <div class="board" id="board"></div>
+          <div class="legend">
+            <span><i class="dot" style="background:#60a5fa;"></i> Hero</span>
+            <span><i class="dot" style="background:#22c55e;"></i> Xenomorph</span>
+            <span><i class="dot" style="background:#fbbf24;"></i> Active</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="log" class="log"></div>
+    </div>
+  </div>
+
+  <script>
+    const boardSize = 7;
+    const roster = [
+      { name: "Spider-Man", hp: 10, attack: 3, power: "Web Blast", color: "#60a5fa", icon: "S" },
+      { name: "Wolverine", hp: 12, attack: 4, power: "Claw Rush", color: "#fca5a5", icon: "W" },
+      { name: "Captain America", hp: 11, attack: 3, power: "Shield Slam", color: "#93c5fd", icon: "C" },
+      { name: "Hulk", hp: 15, attack: 5, power: "Gamma Smash", color: "#fbbf24", icon: "H" },
+      { name: "Black Panther", hp: 10, attack: 4, power: "Vibranium Strike", color: "#a78bfa", icon: "B" },
+      { name: "Iron Man", hp: 9, attack: 3, power: "Repulsor Pulse", color: "#cbd5e1", icon: "I" }
+    ];
+
+    let heroes = [];
+    let xenos = [];
+    let activeHeroIndex = 0;
+    let selectedTile = null;
+    let mode = "idle";
+    let round = 1;
+    let gameOver = false;
+
+    const heroListEl = document.getElementById("heroList");
+    const boardEl = document.getElementById("board");
+    const logEl = document.getElementById("log");
+    const turnLabelEl = document.getElementById("turnLabel");
+    const menuScreen = document.getElementById("menuScreen");
+    const gameScreen = document.getElementById("gameScreen");
+
+    function log(msg) {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = msg;
+      logEl.insertBefore(entry, logEl.firstChild);
+    }
+
+    function getAliveHeroes() {
+      return heroes.filter(h => h.hp > 0);
+    }
+
+    function getCurrentHero() {
+      const alive = getAliveHeroes();
+      if (!alive.length) return null;
+
+      if (heroes[activeHeroIndex] && heroes[activeHeroIndex].hp > 0) return heroes[activeHeroIndex];
+
+      for (let i = 0; i < heroes.length; i++) {
+        if (heroes[i].hp > 0) {
+          activeHeroIndex = i;
+          return heroes[i];
+        }
+      }
+      return null;
+    }
+
+    function renderHeroList() {
+      heroListEl.innerHTML = "";
+      heroes.forEach((hero, index) => {
+        const card = document.createElement("div");
+        const isActive = !gameOver && hero === getCurrentHero();
+        card.className = "hero-card" + (isActive ? " active" : "") + (hero.hp <= 0 ? " dead" : "");
+        card.innerHTML = `
+          <div class="hero-name">${hero.name}</div>
+          <div class="hero-stats">
+            HP: ${Math.max(0, hero.hp)}<br>
+            ATK: ${hero.attack}<br>
+            Power: ${hero.power}
+          </div>
+        `;
+        heroListEl.appendChild(card);
+      });
+    }
+
+    function makeBoard() {
+      boardEl.innerHTML = "";
+      for (let row = 0; row < boardSize; row++) {
+        for (let col = 0; col < boardSize; col++) {
+          const tile = document.createElement("div");
+          tile.className = "tile";
+          tile.dataset.row = row;
+          tile.dataset.col = col;
+          tile.addEventListener("click", () => handleTileClick(row, col));
+          boardEl.appendChild(tile);
+        }
+      }
+    }
+
+    function renderBoard() {
+      const cells = [...boardEl.children];
+      cells.forEach(cell => {
+        cell.classList.remove("selected");
+        cell.innerHTML = "";
+      });
+
+      heroes.forEach(hero => {
+        if (hero.hp <= 0) return;
+        const cell = findTile(hero.row, hero.col);
+        if (!cell) return;
+        const token = document.createElement("div");
+        token.className = "token hero-token";
+        token.textContent = hero.icon;
+        token.title = `${hero.name} HP:${hero.hp}`;
+        if (hero === getCurrentHero()) {
+          token.style.borderColor = "#fbbf24";
+          token.style.boxShadow = "0 0 0 3px rgba(251,191,36,0.35)";
+        }
+        cell.appendChild(token);
+      });
+
+      xenos.forEach(xeno => {
+        const cell = findTile(xeno.row, xeno.col);
+        if (!cell) return;
+        const token = document.createElement("div");
+        token.className = "token xeno-token";
+        token.textContent = "X";
+        token.title = `Xenomorph HP:${xeno.hp}`;
+        cell.appendChild(token);
+      });
+
+      if (selectedTile) {
+        const cell = findTile(selectedTile.row, selectedTile.col);
+        if (cell) cell.classList.add("selected");
+      }
+    }
+
+    function findTile(row, col) {
+      return [...boardEl.children].find(tile => Number(tile.dataset.row) === row && Number(tile.dataset.col) === col);
+    }
+
+    function randomOpenCell(usedCells) {
+      const free = [];
+      for (let r = 0; r < boardSize; r++) {
+        for (let c = 0; c < boardSize; c++) {
+          const occupied = usedCells.some(([rr, cc]) => rr === r && cc === c);
+          if (!occupied) free.push([r, c]);
+        }
+      }
+      if (!free.length) return null;
+      return free[Math.floor(Math.random() * free.length)];
+    }
+
+    function spawnXenomorphs(count = 2) {
+      const used = [...heroes.filter(h => h.hp > 0).map(h => [h.row, h.col]), ...xenos.map(x => [x.row, x.col])];
+      for (let i = 0; i < count; i++) {
+        const pos = randomOpenCell(used);
+        if (!pos) break;
+        xenos.push({ row: pos[0], col: pos[1], hp: 4 + round, attack: 2 + round });
+        used.push(pos);
+      }
+    }
+
+    function resetBoardState() {
+      heroes = roster.map(hero => ({
+        ...hero,
+        hp: hero.hp
+      }));
+      heroes[0].row = 0; heroes[0].col = 0;
+      heroes[1].row = 0; heroes[1].col = 2;
+      heroes[2].row = 0; heroes[2].col = 4;
+      heroes[3].row = 1; heroes[3].col = 1;
+      heroes[4].row = 1; heroes[4].col = 3;
+      heroes[5].row = 1; heroes[5].col = 5;
+
+      xenos = [];
+      activeHeroIndex = 0;
+      selectedTile = null;
+      round = 1;
+      mode = "idle";
+      gameOver = false;
+      spawnXenomorphs(4);
+      log("Battle begins! Select Move, Attack, or Hero Power. Press Next Round to end your turn.");
+      updateTurnLabel();
+      renderHeroList();
+      renderBoard();
+    }
+
+    function updateTurnLabel() {
+      const hero = getCurrentHero();
+      if (!hero) {
+        turnLabelEl.textContent = "No heroes alive";
+        return;
+      }
+      turnLabelEl.textContent = `${hero.name}'s turn | Round ${round}`;
+    }
+
+    function isAdjacent(a, b) {
+      return Math.abs(a.row - b.row) + Math.abs(a.col - b.col) === 1;
+    }
+
+    function handleTileClick(row, col) {
+      if (gameOver) return;
+
+      const currentHero = getCurrentHero();
+      if (!currentHero) {
+        log("All Marvel heroes are down. You lose.");
+        return;
+      }
+
+      const targetXeno = xenos.find(x => x.row === row && x.col === col);
+      const targetHero = heroes.find(h => h.hp > 0 && h.row === row && h.col === col);
+
+      if (mode === "move") {
+        if (targetHero && targetHero !== currentHero) {
+          log("That tile is occupied by another hero.");
+          return;
+        }
+
+        const canMove = isAdjacent(currentHero, { row, col }) || (currentHero.row === row && currentHero.col === col);
+        if (!canMove) {
+          log("You can only move one tile at a time.");
+          return;
+        }
+
+        currentHero.row = row;
+        currentHero.col = col;
+        selectedTile = { row, col };
+        log(`${currentHero.name} moved to (${row + 1}, ${col + 1}).`);
+        mode = "idle";
+        renderBoard();
+        return;
+      }
+
+      if (mode === "attack") {
+        if (!targetXeno) {
+          log("Choose a Xenomorph tile to attack.");
+          return;
+        }
+
+        targetXeno.hp -= currentHero.attack;
+        log(`${currentHero.name} attacks a Xenomorph for ${currentHero.attack} damage.`);
+
+        if (targetXeno.hp <= 0) {
+          xenos = xenos.filter(x => x !== targetXeno);
+          log("💀 A Xenomorph was eliminated!");
+        }
+
+        mode = "idle";
+        renderBoard();
+        return;
+      }
+
+      if (mode === "special") {
+        const damage = currentHero.attack + 2;
+        if (!targetXeno) {
+          log("Choose a Xenomorph tile for your hero power.");
+          return;
+        }
+
+        targetXeno.hp -= damage;
+        log(`${currentHero.name} uses ${currentHero.power} for ${damage} damage!`);
+
+        if (targetXeno.hp <= 0) {
+          xenos = xenos.filter(x => x !== targetXeno);
+          log("💀 The target Xenomorph is defeated.");
+        }
+
+        mode = "idle";
+        renderBoard();
+        return;
+      }
+
+      if (targetHero && targetHero === currentHero) {
+        selectedTile = { row, col };
+        renderBoard();
+        log(`${currentHero.name} is selected.`);
+      } else if (targetXeno) {
+        log(`Xenomorph detected. Choose Attack or Hero Power.`);
+      } else {
+        log("Click a movement button, then click a tile to move there.");
+      }
+    }
+
+    function advanceTurn() {
+      if (gameOver) return;
+
+      const currentHero = getCurrentHero();
+      if (!currentHero) {
+        gameOver = true;
+        log("🔴 GAME OVER - No Marvel heroes survived. You lose.");
+        turnLabelEl.textContent = "YOU LOST";
+        renderHeroList();
+        renderBoard();
+        return;
+      }
+
+      xenos.forEach(xeno => {
+        const closestHero = heroes
+          .filter(h => h.hp > 0)
+          .sort((a, b) => {
+            const da = Math.abs(a.row - xeno.row) + Math.abs(a.col - xeno.col);
+            const db = Math.abs(b.row - xeno.row) + Math.abs(b.col - xeno.col);
+            return da - db;
+          })[0];
+
+        if (!closestHero) return;
+
+        const distance = Math.abs(closestHero.row - xeno.row) + Math.abs(closestHero.col - xeno.col);
+        if (distance <= 2) {
+          closestHero.hp -= xeno.attack;
+          log(`A Xenomorph hits ${closestHero.name} for ${xeno.attack} damage!`);
+          if (closestHero.hp <= 0) {
+            closestHero.hp = 0;
+            log(`💀 ${closestHero.name} has fallen!`);
+          }
+        } else {
+          const dr = Math.sign(closestHero.row - xeno.row);
+          const dc = Math.sign(closestHero.col - xeno.col);
+          xeno.row += dr;
+          xeno.col += dc;
+        }
+      });
+
+      heroes = heroes.map(hero => hero.hp < 0 ? { ...hero, hp: 0 } : hero);
+      const aliveHeroes = heroes.filter(h => h.hp > 0);
+
+      if (!aliveHeroes.length) {
+        gameOver = true;
+        log("🔴 GAME OVER - All heroes defeated. You lose.");
+        turnLabelEl.textContent = "YOU LOST";
+        renderHeroList();
+        renderBoard();
+        return;
+      }
+
+      activeHeroIndex = heroes.findIndex(h => h.name === aliveHeroes[0].name);
+      selectedTile = null;
+
+      round++;
+      spawnXenomorphs(1 + Math.floor(round / 2));
+      mode = "idle";
+      updateTurnLabel();
+      renderHeroList();
+      renderBoard();
+      log(`Round ${round} begins. Xenomorphs are closing in...`);
+    }
+
+    function startGame() {
+      menuScreen.classList.add("hidden");
+      gameScreen.classList.add("active");
+      resetBoardState();
+    }
+
+    function quitGame() {
+      gameScreen.classList.remove("active");
+      menuScreen.classList.remove("hidden");
+      logEl.innerHTML = "";
+    }
+
+    document.getElementById("playBtn").addEventListener("click", startGame);
+    document.getElementById("quitBtn").addEventListener("click", quitGame);
+
+    document.getElementById("moveBtn").addEventListener("click", () => {
+      if (gameOver) return;
+      mode = "move";
+      log("Move mode active. Click an adjacent tile.");
+    });
+
+    document.getElementById("attackBtn").addEventListener("click", () => {
+      if (gameOver) return;
+      mode = "attack";
+      log("Attack mode active. Click a Xenomorph.");
+    });
+
+    document.getElementById("specialBtn").addEventListener("click", () => {
+      if (gameOver) return;
+      mode = "special";
+      log("Hero Power mode active. Click a Xenomorph.");
+    });
+
+    document.getElementById("nextRoundBtn").addEventListener("click", () => {
+      advanceTurn();
+    });
+
+    makeBoard();
+    renderHeroList();
+    renderBoard();
+  </script>
+</body>
+</html>
